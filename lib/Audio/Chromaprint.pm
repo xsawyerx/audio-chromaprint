@@ -25,9 +25,8 @@ sub BUILD {
 
     $ffi->lib( find_lib_or_exit( 'lib' => 'chromaprint' ) );
 
-    foreach my $func ( keys %SUBS ) {
-        $ffi->attach( $func, @{ $SUBS{$func} } );
-    }
+    $ffi->attach( $_, @{ $SUBS{$_} } )
+        for keys %SUBS;
 }
 
 has 'cp' => (
