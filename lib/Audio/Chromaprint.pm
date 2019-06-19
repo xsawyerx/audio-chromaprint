@@ -19,8 +19,9 @@ our %SUBS = (
     'chromaprint_set_option'  => [ [ 'opaque', 'string', 'int' ] => 'int'    ],
     'chromaprint_start'       => [ [ 'opaque', 'int', 'int' ]    => 'int'    ],
     'chromaprint_finish'      => [ ['opaque']                    => 'int'    ],
+    'chromaprint_feed'        => [ ['opaque', 'string', 'int' ]  => 'int'    ],
 
-    'chromaprint_get_fingerprint_hash' => [ [ 'opaque', 'opaque' ], 'int' ],
+    'chromaprint_get_fingerprint_hash' => [ [ 'opaque', 'uint32*' ], 'int' ],
 );
 
 sub BUILD {
@@ -118,6 +119,11 @@ sub get_fingerprint_hash {
     my $hash;
     chromaprint_get_fingerprint_hash( $self->cp, \$hash );
     return $hash;
+}
+
+sub feed {
+    my($self, $data) = @_;
+    chromaprint_feed($self->cp, $data, length($data)/2);
 }
 
 sub DEMOLISH {
