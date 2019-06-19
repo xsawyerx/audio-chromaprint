@@ -22,6 +22,10 @@ our %SUBS = (
     'chromaprint_feed'        => [ ['opaque', 'string', 'int' ]  => 'int'    ],
 
     'chromaprint_get_fingerprint_hash' => [ [ 'opaque', 'uint32*' ], 'int' ],
+    'chromaprint_get_fingerprint'      => [ [ 'opaque', 'opaque*' ], 'int' ],
+    'chromaprint_get_raw_fingerprint'  => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
+
+    'chromaprint_dealloc' => [ [ 'opaque' ] => 'void' ],
 );
 
 sub BUILD {
@@ -34,6 +38,8 @@ sub BUILD {
 
     $ffi->attach( $_, @{ $SUBS{$_} } )
         for keys %SUBS;
+
+    $ffi->attach_cast('opaque_to_string' => opaque => 'string');
 }
 
 subtype 'ChromaprintAlgorithm',
@@ -119,6 +125,26 @@ sub get_fingerprint_hash {
     my $hash;
     chromaprint_get_fingerprint_hash( $self->cp, \$hash );
     return $hash;
+}
+
+sub get_fingerprint {
+    my $self = shift;
+    my $ptr;
+    chromaprint_get_fingerprint($self->cp, \$ptr);
+    my $str = opaque_to_string($ptr);
+    chromaprint_dealloc($ptr);
+    return $ptr;
+}
+
+sub get_raw_fingerprint {
+    my $self = shift;
+    my $ptr;
+    my $size;
+    chromaprint_get_raw_fingerprint($self->cp, \$ptr, \$size);
+    # not espeically fast, but need a cast with a variable length array
+    my $fp = FFI::Platypus->new->cast('opaque' => "uint32[$size]", $ptr);
+    chromaprint_dealloc($ptr);
+    return $fp;
 }
 
 sub feed {
