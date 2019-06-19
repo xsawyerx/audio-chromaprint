@@ -4,6 +4,7 @@ use Moose;
 use Carp qw< croak >;
 use FFI::Platypus;
 use FFI::CheckLib;
+use Moose::Util::TypeConstraints;
 
 our $HAS_SUBS;
 our %SUBS = (
@@ -27,18 +28,31 @@ sub BUILD {
 
     $ffi->attach( $_, @{ $SUBS{$_} } )
         for keys %SUBS;
+
+    shift->cp;
 }
+
+subtype 'ChromaprintAlgorithm',
+    as 'Int',
+    where { /^[123]$/xms },
+    message { 'algorithm must be 1, 2, or 3' };
+
+has 'algorithm' => (
+    'is'      => 'ro',
+    'isa'     => 'ChromaprintAlgorithm',
+    'default' => sub {1},
+);
 
 has 'cp' => (
     'is'      => 'ro',
     'lazy'    => 1,
-    'default' => sub { chromaprint_new(1) }
+    'default' => sub {
+        my $self = shift;
+        return chromaprint_new( $self->algorithm );
+    }
 );
 
-sub get_version {
-    my $self = shift;
-    return chromaprint_get_version( $self->cp );
-}
+sub get_version { chromaprint_get_version() }
 
 sub start {
     my ( $self, $sample_rate, $num_channels ) = @_;
@@ -60,7 +74,8 @@ sub finish {
 sub get_fingerprint_hash {
     my $self = shift;
     my $hash;
-    return chromaprint_get_fingerprint_hash( $self->cp, \$hash );
+    chromaprint_get_fingerprint_hash( $self->cp, \$hash );
+    return $hash;
 }
 
 sub DEMOLISH {
