@@ -57,7 +57,7 @@ sub BUILD {
     $ffi->attach( $_, @{ $SUBS{$_} } )
         for keys %SUBS;
 
-    $ffi->attach_cast('_opaque_to_string' => opaque => 'string');
+    $ffi->attach_cast( '_opaque_to_string' => opaque => 'string' );
 }
 
 subtype 'ChromaprintAlgorithm',
@@ -165,9 +165,10 @@ sub get_raw_fingerprint {
     my $self = shift;
     my $ptr;
     my $size;
-    _get_raw_fingerprint($self->cp, \$ptr, \$size);
+    _get_raw_fingerprint( $self->cp, \$ptr, \$size );
+
     # not espeically fast, but need a cast with a variable length array
-    my $fp = FFI::Platypus->new->cast('opaque' => "uint32[$size]", $ptr);
+    my $fp = FFI::Platypus->new->cast( 'opaque' => "uint32[$size]", $ptr );
     _dealloc($ptr);
     return $fp;
 }
@@ -215,8 +216,8 @@ sub clear_fingerprint {
 }
 
 sub feed {
-    my($self, $data) = @_;
-    return _feed($self->cp, $data, length($data) / BYTES_PER_SAMPLE);
+    my ( $self, $data ) = @_;
+    return _feed( $self->cp, $data, length($data) / BYTES_PER_SAMPLE() );
 }
 
 sub DEMOLISH {
