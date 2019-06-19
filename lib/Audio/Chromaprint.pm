@@ -6,6 +6,11 @@ use FFI::Platypus;
 use FFI::CheckLib;
 use Moose::Util::TypeConstraints;
 
+use constant {
+    'MIN_SILENCE_THRESHOLD' => 0,
+    'MAX_SILENCE_THRESHOLD' => 32_767,
+};
+
 our $HAS_SUBS;
 our %SUBS = (
     'chromaprint_new'         => [ ['int']                       => 'opaque' ],
@@ -28,14 +33,17 @@ sub BUILD {
 
     $ffi->attach( $_, @{ $SUBS{$_} } )
         for keys %SUBS;
-
-    shift->cp;
 }
 
 subtype 'ChromaprintAlgorithm',
     as 'Int',
-    where { /^[123]$/xms },
-    message { 'algorithm must be 1, 2, or 3' };
+    where { /^[0123]$/xms },
+    message { 'algorithm must be 0, 1, 2, or 3' };
+
+subtype 'ChromaprintSilenceThreshold',
+    as 'Int',
+    where { $_ >= MIN_SILENCE_THRESHOLD() && $_ <= MAX_SILENCE_THRESHOLD() },
+    message { 'silence_threshold option must be between 0 and 32767' };
 
 has 'algorithm' => (
     'is'      => 'ro',
@@ -48,8 +56,22 @@ has 'cp' => (
     'lazy'    => 1,
     'default' => sub {
         my $self = shift;
-        return chromaprint_new( $self->algorithm );
+        my $cp   = chromaprint_new( $self->algorithm );
+
+        if ( $self->has_silence_threshold ) {
+            chromaprint_set_option(
+                $cp, 'silence_threshold' => $self->silence_threshold,
+            );
+        }
+
+        return $cp;
     }
+);
+
+has 'silence_threshold' => (
+    'is'        => 'ro',
+    'isa'       => 'ChromaprintSilenceThreshold',
+    'predicate' => 'has_silence_threshold',
 );
 
 sub get_version { chromaprint_get_version() }
@@ -64,6 +86,26 @@ sub start {
         or croak 'num_channels must be 1 or 2';
 
     return chromaprint_start( $self->cp, $sample_rate, $num_channels );
+}
+
+sub set_option {
+    my ( $self, $name, $value ) = @_;
+
+    $name && $value
+        or croak('set_option( name, value )');
+
+    length $name
+        or croak('set_option requires a "name" string');
+
+    $value =~ /^[0-9]+$/xms
+        or croak('set_option requires a "value" integer');
+
+    if ( $name eq 'silence_threshold' ) {
+        $value >= MIN_SILENCE_THRESHOLD() && $value <= MAX_SILENCE_THRESHOLD()
+            or croak('silence_threshold option must be between 0 and 32767');
+    }
+
+    return chromaprint_set_option( $self->cp, $name => $value );
 }
 
 sub finish {
