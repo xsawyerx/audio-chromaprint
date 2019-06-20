@@ -2,7 +2,7 @@ package Audio::Chromaprint;
 
 use Moose;
 use Carp qw< croak >;
-use FFI::Platypus;
+use FFI::Platypus 0.88;
 use FFI::CheckLib;
 use Moose::Util::TypeConstraints;
 
@@ -13,19 +13,19 @@ use constant {
 
 our $HAS_SUBS;
 our %SUBS = (
-    'chromaprint_new'         => [ ['int']                       => 'opaque' ],
-    'chromaprint_get_version' => [ []                            => 'string' ],
-    'chromaprint_free'        => [ ['opaque']                    => 'void'   ],
-    'chromaprint_set_option'  => [ [ 'opaque', 'string', 'int' ] => 'int'    ],
-    'chromaprint_start'       => [ [ 'opaque', 'int', 'int' ]    => 'int'    ],
-    'chromaprint_finish'      => [ ['opaque']                    => 'int'    ],
-    'chromaprint_feed'        => [ ['opaque', 'string', 'int' ]  => 'int'    ],
+    '_new'         => [ ['int']                       => 'opaque' ],
+    '_get_version' => [ []                            => 'string' ],
+    '_free'        => [ ['opaque']                    => 'void'   ],
+    '_set_option'  => [ [ 'opaque', 'string', 'int' ] => 'int'    ],
+    '_start'       => [ [ 'opaque', 'int', 'int' ]    => 'int'    ],
+    '_finish'      => [ ['opaque']                    => 'int'    ],
+    '_feed'        => [ ['opaque', 'string', 'int' ]  => 'int'    ],
 
-    'chromaprint_get_fingerprint_hash' => [ [ 'opaque', 'uint32*' ], 'int' ],
-    'chromaprint_get_fingerprint'      => [ [ 'opaque', 'opaque*' ], 'int' ],
-    'chromaprint_get_raw_fingerprint'  => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
+    '_get_fingerprint_hash' => [ [ 'opaque', 'uint32*' ], 'int' ],
+    '_get_fingerprint'      => [ [ 'opaque', 'opaque*' ], 'int' ],
+    '_get_raw_fingerprint'  => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
 
-    'chromaprint_dealloc' => [ [ 'opaque' ] => 'void' ],
+    '_dealloc' => [ [ 'opaque' ] => 'void' ],
 );
 
 sub BUILD {
@@ -33,6 +33,15 @@ sub BUILD {
         and return;
 
     my $ffi = FFI::Platypus->new;
+
+    # Setting this mangler lets is omit the chromaprint_ prefix
+    # from the attach call below, and the function names used
+    # by perl
+    $ffi->mangler(sub {
+        my $name = shift;
+        $name =~ s/^_/chromaprint_/;
+        return $name;
+    });
 
     $ffi->lib( find_lib_or_exit( 'lib' => 'chromaprint' ) );
 
@@ -63,10 +72,10 @@ has 'cp' => (
     'lazy'    => 1,
     'default' => sub {
         my $self = shift;
-        my $cp   = chromaprint_new( $self->algorithm );
+        my $cp   = _new( $self->algorithm );
 
         if ( $self->has_silence_threshold ) {
-            chromaprint_set_option(
+            _set_option(
                 $cp, 'silence_threshold' => $self->silence_threshold,
             );
         }
@@ -81,7 +90,7 @@ has 'silence_threshold' => (
     'predicate' => 'has_silence_threshold',
 );
 
-sub get_version { chromaprint_get_version() }
+sub get_version { _get_version() }
 
 sub start {
     my ( $self, $sample_rate, $num_channels ) = @_;
@@ -92,7 +101,7 @@ sub start {
     $num_channels =~ /^[12]$/xms
         or croak 'num_channels must be 1 or 2';
 
-    return chromaprint_start( $self->cp, $sample_rate, $num_channels );
+    return _start( $self->cp, $sample_rate, $num_channels );
 }
 
 sub set_option {
@@ -112,27 +121,27 @@ sub set_option {
             or croak('silence_threshold option must be between 0 and 32767');
     }
 
-    return chromaprint_set_option( $self->cp, $name => $value );
+    return _set_option( $self->cp, $name => $value );
 }
 
 sub finish {
     my $self = shift;
-    return chromaprint_finish( $self->cp );
+    return _finish( $self->cp );
 }
 
 sub get_fingerprint_hash {
     my $self = shift;
     my $hash;
-    chromaprint_get_fingerprint_hash( $self->cp, \$hash );
+    _get_fingerprint_hash( $self->cp, \$hash );
     return $hash;
 }
 
 sub get_fingerprint {
     my $self = shift;
     my $ptr;
-    chromaprint_get_fingerprint($self->cp, \$ptr);
+    _get_fingerprint($self->cp, \$ptr);
     my $str = opaque_to_string($ptr);
-    chromaprint_dealloc($ptr);
+    _dealloc($ptr);
     return $ptr;
 }
 
@@ -140,21 +149,21 @@ sub get_raw_fingerprint {
     my $self = shift;
     my $ptr;
     my $size;
-    chromaprint_get_raw_fingerprint($self->cp, \$ptr, \$size);
+    _get_raw_fingerprint($self->cp, \$ptr, \$size);
     # not espeically fast, but need a cast with a variable length array
     my $fp = FFI::Platypus->new->cast('opaque' => "uint32[$size]", $ptr);
-    chromaprint_dealloc($ptr);
+    _dealloc($ptr);
     return $fp;
 }
 
 sub feed {
     my($self, $data) = @_;
-    chromaprint_feed($self->cp, $data, length($data)/2);
+    _feed($self->cp, $data, length($data)/2);
 }
 
 sub DEMOLISH {
     my $self = shift;
-    chromaprint_free( $self->cp );
+    _free( $self->cp );
 }
 
 1;
