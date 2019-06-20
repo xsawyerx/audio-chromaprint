@@ -24,6 +24,14 @@ our %SUBS = (
     '_get_fingerprint_hash' => [ [ 'opaque', 'uint32*' ], 'int' ],
     '_get_fingerprint'      => [ [ 'opaque', 'opaque*' ], 'int' ],
     '_get_raw_fingerprint'  => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
+    '_get_num_channels'     => [ [ 'opaque' ], 'int' ],
+    '_get_sample_rate'      => [ [ 'opaque' ], 'int' ],
+    '_get_item_duration'    => [ [ 'opaque' ], 'int' ],
+    '_get_item_duration_ms' => [ [ 'opaque' ], 'int' ],
+    '_get_delay'            => [ [ 'opaque' ], 'int' ],
+    '_get_delay_ms'         => [ [ 'opaque' ], 'int' ],
+    '_get_raw_fingerprint_size' => [ [ 'opaque', 'int*' ], 'int' ],
+    '_clear_fingerprint'    => [ [ 'opaque' ], 'int' ],
 
     '_dealloc' => [ [ 'opaque' ] => 'void' ],
 );
@@ -156,14 +164,59 @@ sub get_raw_fingerprint {
     return $fp;
 }
 
+sub get_num_channels {
+    my $self = shift;
+    return _get_num_channels($self->cp);
+}
+
+sub get_sample_rate {
+    my $self = shift;
+    return _get_sample_rate($self->cp);
+}
+
+sub get_item_duration {
+    my $self = shift;
+    return _get_item_duration($self->cp);
+}
+
+sub get_item_duration_ms {
+    my $self = shift;
+    return _get_item_duration_ms($self->cp);
+}
+
+sub get_item_delay {
+    my $self = shift;
+    return _get_delay($self->cp);
+}
+
+sub get_delay_ms {
+    my $self = shift;
+    return _get_delay_ms($self->cp);
+}
+
+sub get_raw_fingerprint_size {
+    my $self = shift;
+    my $size;
+    _get_raw_fingerprint_size($self->cp, \$size);
+    return $size;
+}
+
+sub clear_fingerprint {
+    my $self = shift;
+    _clear_fingerprint($self->cp);
+}
+
 sub feed {
     my($self, $data) = @_;
-    _feed($self->cp, $data, length($data)/2);
+    return _feed($self->cp, $data, length($data)/2);
 }
 
 sub DEMOLISH {
     my $self = shift;
     _free( $self->cp );
 }
+
+# TODO: chromaprint_encode_fingerprint
+# TODO: chromaprint_decode_fingerprint
 
 1;
