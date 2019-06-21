@@ -3,6 +3,8 @@ use warnings;
 use Test::More;
 use Audio::Chromaprint;
 
+note "version = ", Audio::Chromaprint->get_version;
+
 my $cp = Audio::Chromaprint->new;
 isa_ok $cp, 'Audio::Chromaprint';
 

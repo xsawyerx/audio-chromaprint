@@ -57,13 +57,13 @@ sub BUILD {
     $ffi->attach( $_, @{ $SUBS{$_} } )
         for keys %SUBS;
 
-    $ffi->attach_cast('opaque_to_string' => opaque => 'string');
+    $ffi->attach_cast('_opaque_to_string' => opaque => 'string');
 }
 
 subtype 'ChromaprintAlgorithm',
     as 'Int',
-    where { /^[0123]$/xms },
-    message { 'algorithm must be 0, 1, 2, or 3' };
+    where { /^[1234]$/xms },
+    message { 'algorithm must be 1, 2, 3 or 4' };
 
 subtype 'ChromaprintSilenceThreshold',
     as 'Int',
@@ -73,7 +73,7 @@ subtype 'ChromaprintSilenceThreshold',
 has 'algorithm' => (
     'is'      => 'ro',
     'isa'     => 'ChromaprintAlgorithm',
-    'default' => sub {1},
+    'default' => sub {2},
 );
 
 has 'cp' => (
@@ -81,7 +81,11 @@ has 'cp' => (
     'lazy'    => 1,
     'default' => sub {
         my $self = shift;
-        my $cp   = _new( $self->algorithm );
+
+        # subtract one from the algorithm so that
+        # 1 maps to 2 maps to CHROMAPRINT_ALGORITHM_TEST2
+        # (the latter has the value 1)
+        my $cp   = _new( $self->algorithm - 1 );
 
         if ( $self->has_silence_threshold ) {
             _set_option(
@@ -99,7 +103,10 @@ has 'silence_threshold' => (
     'predicate' => 'has_silence_threshold',
 );
 
-sub get_version { _get_version() }
+sub get_version {
+    __PACKAGE__->new unless __PACKAGE__->can('_get_version');
+    return _get_version();
+}
 
 sub start {
     my ( $self, $sample_rate, $num_channels ) = @_;
@@ -149,9 +156,9 @@ sub get_fingerprint {
     my $self = shift;
     my $ptr;
     _get_fingerprint($self->cp, \$ptr);
-    my $str = opaque_to_string($ptr);
+    my $str = _opaque_to_string($ptr);
     _dealloc($ptr);
-    return $ptr;
+    return $str;
 }
 
 sub get_raw_fingerprint {
@@ -185,7 +192,7 @@ sub get_item_duration_ms {
     return _get_item_duration_ms($self->cp);
 }
 
-sub get_item_delay {
+sub get_delay {
     my $self = shift;
     return _get_delay($self->cp);
 }
