@@ -9,6 +9,7 @@ use Moose::Util::TypeConstraints;
 use constant {
     'MIN_SILENCE_THRESHOLD' => 0,
     'MAX_SILENCE_THRESHOLD' => 32_767,
+    'BYTES_PER_SAMPLE'      => 2,
 };
 
 our $HAS_SUBS;
@@ -208,7 +209,7 @@ sub clear_fingerprint {
 
 sub feed {
     my($self, $data) = @_;
-    return _feed($self->cp, $data, length($data)/2);
+    return _feed($self->cp, $data, length($data) / BYTES_PER_SAMPLE);
 }
 
 sub DEMOLISH {
