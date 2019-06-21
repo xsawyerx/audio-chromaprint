@@ -22,17 +22,17 @@ our %SUBS = (
     '_finish'      => [ ['opaque']                    => 'int'    ],
     '_feed'        => [ ['opaque', 'string', 'int' ]  => 'int'    ],
 
-    '_get_fingerprint_hash' => [ [ 'opaque', 'uint32*' ], 'int' ],
-    '_get_fingerprint'      => [ [ 'opaque', 'opaque*' ], 'int' ],
-    '_get_raw_fingerprint'  => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
-    '_get_num_channels'     => [ [ 'opaque' ], 'int' ],
-    '_get_sample_rate'      => [ [ 'opaque' ], 'int' ],
-    '_get_item_duration'    => [ [ 'opaque' ], 'int' ],
-    '_get_item_duration_ms' => [ [ 'opaque' ], 'int' ],
-    '_get_delay'            => [ [ 'opaque' ], 'int' ],
-    '_get_delay_ms'         => [ [ 'opaque' ], 'int' ],
+    '_get_fingerprint_hash'     => [ [ 'opaque', 'uint32*' ], 'int' ],
+    '_get_fingerprint'          => [ [ 'opaque', 'opaque*' ], 'int' ],
+    '_get_raw_fingerprint'      => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
+    '_get_num_channels'         => [ [ 'opaque' ], 'int' ],
+    '_get_sample_rate'          => [ [ 'opaque' ], 'int' ],
+    '_get_item_duration'        => [ [ 'opaque' ], 'int' ],
+    '_get_item_duration_ms'     => [ [ 'opaque' ], 'int' ],
+    '_get_delay'                => [ [ 'opaque' ], 'int' ],
+    '_get_delay_ms'             => [ [ 'opaque' ], 'int' ],
     '_get_raw_fingerprint_size' => [ [ 'opaque', 'int*' ], 'int' ],
-    '_clear_fingerprint'    => [ [ 'opaque' ], 'int' ],
+    '_clear_fingerprint'        => [ [ 'opaque' ], 'int' ],
 
     '_dealloc' => [ [ 'opaque' ] => 'void' ],
 );
@@ -46,11 +46,11 @@ sub BUILD {
     # Setting this mangler lets is omit the chromaprint_ prefix
     # from the attach call below, and the function names used
     # by perl
-    $ffi->mangler(sub {
+    $ffi->mangler( sub {
         my $name = shift;
-        $name =~ s/^_/chromaprint_/;
+        $name =~ s/^_/chromaprint_/xms;
         return $name;
-    });
+    } );
 
     $ffi->lib( find_lib_or_exit( 'lib' => 'chromaprint' ) );
 
