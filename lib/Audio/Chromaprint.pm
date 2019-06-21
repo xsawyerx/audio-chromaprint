@@ -219,5 +219,6 @@ sub DEMOLISH {
 
 # TODO: chromaprint_encode_fingerprint
 # TODO: chromaprint_decode_fingerprint
+# TODO: chromaprint_hash_fingerprint
 
 1;
