@@ -106,7 +106,10 @@ has 'silence_threshold' => (
 );
 
 sub get_version {
-    __PACKAGE__->new unless __PACKAGE__->can('_get_version');
+    # generate chromaprint object
+    __PACKAGE__->can('_get_version');
+        or __PACKAGE__->new()
+
     return _get_version();
 }
 
