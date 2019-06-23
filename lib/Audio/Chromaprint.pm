@@ -7,11 +7,11 @@ use FFI::Platypus 0.88;
 use FFI::CheckLib;
 use Moose::Util::TypeConstraints;
 
-use constant {
-    'MIN_SILENCE_THRESHOLD' => 0,
-    'MAX_SILENCE_THRESHOLD' => 32_767,
-    'BYTES_PER_SAMPLE'      => 2,
-};
+# This is in three statement so we could support 5.6.0,
+# since hash version only came out in 5.8.0.
+use constant 'MIN_SILENCE_THRESHOLD' => 0;
+use constant 'MAX_SILENCE_THRESHOLD' => 32_767;
+use constant 'BYTES_PER_SAMPLE'      => 2;
 
 our $HAS_SUBS;
 our %SUBS = (
