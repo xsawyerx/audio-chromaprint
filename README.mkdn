@@ -1,0 +1,197 @@
+# NAME
+
+Audio::Chromaprint - Interface to the Chromaprint library
+
+# VERSION
+
+version 0.001
+
+# SYNOPSIS
+
+    use Audio::Chromaprint;
+    use Path::Tiny qw< path >;
+
+    my $cp = Audio::Chromaprint->new();
+
+    $cp->start( 44_100, 1 ); # sample rate (Hz), 1 audio stream
+    $cp->feed( path('file.wav')->slurp_raw );
+    $cp->finish;
+
+    say "Fingerprint hash: ", $cp->get_fingerprint_hash;
+
+# DESCRIPTION
+
+Chromaprint is the core component of the AcoustID project. It's a
+client-side library that implements a custom algorithm for extracting
+fingerprints from any audio source.
+
+You can read more about Chromaprint on its
+[website](https://acoustid.org/chromaprint).
+
+This binding was done against 1.4.3. While it should work for newer versions,
+please let us know if you are experiencing issues with newer versions.
+
+# ATTRIBUTES
+
+## algorithm
+
+Integer representing the Chromaprint algorithm.
+
+Acceptable values:
+
+- **1**
+- **2**
+- **3**
+- **4**
+
+The default is **2**. (This is the default in Chromaprint.)
+
+## silence\_threshold
+
+An integer representing the silence threshold.
+
+Accepting a number between **0** and **32,767** (without a comma).
+
+# METHODS
+
+## new
+
+    my $chromaprint = Audio::Chromaprint->new(
+        'algorithm'         => 1,     # optional, default is 2
+        'silence_threshold' => 1_000, # optional,
+    );
+
+## start
+
+    $chromaprint->start( $sample_rate, $num_streams );
+
+Start the computation of a fingerprint with a new audio stream.
+
+First argument is the sample rate (in integer) of the audio stream (in Hz).
+
+Second argument is number of channels in the audio stream (1 or 2).
+
+## set\_option
+
+    $chromaprint->set_option( $key => $value );
+
+Setting an option to Chromaprint.
+
+In version 1.4.3 only the `silence_threshold` is available, which we
+also expose during instantiation under `new`.
+
+## get\_version
+
+    my $version = $chromaprint->get_version();
+
+Returns a string representing the version.
+
+## feed
+
+    $chromaprint->feed($data);
+
+Feed data to Chromaprint to analyze. The size definitions are handled
+in the module, so you only send the data, no need for more.
+
+You can use [Path::Tiny](https://metacpan.org/pod/Path::Tiny) to do this easily using the `slurp_raw`:
+
+    use Path::Tiny qw< path >;
+    my $file = path('some_file.wav');
+    my $data = $file->slurp_raw();
+
+    $chromaprint->feed($data);
+
+## finish
+
+    $chromaprint->finish();
+
+Process any remaining buffered audio data.
+
+This has to be run before you can get the fingerprints.
+&#x3d;head2 get\_fingerprint
+
+    my $fingerprint = $chromaprint->get_fingerprint();
+
+Provides a compressed string representing the fingerprint of the file.
+You might prefer using `get_fingerprint_hash`.
+
+## get\_fingerprint\_hash
+
+    my $fingerprint_hash = $chromaprint->get_fingerprint_hash();
+
+Provides a hash string, representing the fingerprint for the file.
+
+## get\_raw\_fingerprint
+
+    my $raw_fingerprint = $chromaprint->get_raw_fingerprint();
+
+Return the calculated fingerprint as an array of 32-bit integers.
+
+## get\_raw\_fingerprint\_size
+
+    my $fingerprint_size = $chromaprint->get_fingerprint_size();
+
+Return the length of the current raw fingerprint.
+
+## clear\_fingerprint
+
+    $chromaprint->clear_fingerprint();
+
+Clear the current fingerprint, but allow more data to be processed.
+
+## get\_num\_channels
+
+    my $num_of_channels = $chromaprint->get_num_channels();
+
+Get the number of channels that is internally used for fingerprinting.
+
+## get\_sample\_rate
+
+    my $sample_rate = $chromaprint->get_sample_rate();
+
+Get the sampling rate that is internally used for fingerprinting.
+
+## get\_item\_duration
+
+    my $item_duration = $chromaprint->get_item_duration();
+
+Get the duration of one item in the raw fingerprint in samples.
+
+## get\_item\_duration\_ms
+
+    my $item_duration_ms = $chromaprint->get_item_duration_ms();
+
+Get the duration of one item in the raw fingerprint in milliseconds.
+
+## get\_delay
+
+    my $delay = $chromaprint->get_delay();
+
+Get the duration of internal buffers that the fingerprinting algorithm uses.
+
+## get\_delay\_ms
+
+    my $delay_ms = $chromaprint->get_delay_ms();
+
+Get the duration of internal buffers that the fingerprinting algorithm uses.
+
+# UNSUPPORTED METHODS
+
+We do not yet support the following methods.
+
+- `encode_fingerprint`
+- `decode_fingerprint`
+- `hash_fingerprint`
+
+# AUTHORS
+
+- Sawyer X <xsawyerx@cpan.org>
+- Graham Ollis <plicease@cpan.org>
+
+# COPYRIGHT AND LICENSE
+
+This software is Copyright (c) 2019 by Sawyer X.
+
+This is free software, licensed under:
+
+    The MIT (X11) License
