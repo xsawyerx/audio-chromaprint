@@ -78,9 +78,10 @@ has 'algorithm' => (
 );
 
 has 'cp' => (
-    'is'      => 'ro',
-    'lazy'    => 1,
-    'default' => sub {
+    'is'       => 'ro',
+    'lazy'     => 1,
+    'init_arg' => undef,
+    'default'  => sub {
         my $self = shift;
 
         # subtract one from the algorithm so that
