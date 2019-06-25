@@ -349,6 +349,7 @@ You can use L<Path::Tiny> to do this easily using the C<slurp_raw>:
 Process any remaining buffered audio data.
 
 This has to be run before you can get the fingerprints.
+
 =head2 get_fingerprint
 
     my $fingerprint = $chromaprint->get_fingerprint();
