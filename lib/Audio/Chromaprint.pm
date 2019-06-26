@@ -242,6 +242,9 @@ sub DEMOLISH {
 # TODO: chromaprint_decode_fingerprint
 # TODO: chromaprint_hash_fingerprint
 
+no Moose;
+__PACKAGE__->meta->make_immutable;
+
 1;
 
 __END__
