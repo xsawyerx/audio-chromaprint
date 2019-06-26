@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+    * If you do not have Chromaprint available, we will install
+      it for you, using Alien::chromaprint!
     * croak on error: The Chromaprint library does not provide
       the reason something fails, but at least tells us when it
       fails. We now croak when an error occurs in the library.

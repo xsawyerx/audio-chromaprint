@@ -53,7 +53,7 @@ sub BUILD {
         return $name;
     } );
 
-    $ffi->lib( find_lib_or_exit( 'lib' => 'chromaprint' ) );
+    $ffi->lib( find_lib_or_exit( 'lib' => 'chromaprint', alien => 'Alien::chromaprint' ) );
 
     $ffi->attach( $_, @{ $SUBS{$_} } )
         for keys %SUBS;
