@@ -224,12 +224,13 @@ sub get_raw_fingerprint_size {
 
 sub clear_fingerprint {
     my $self = shift;
-    _clear_fingerprint($self->cp)
+    _clear_fingerprint( $self->cp )
         or croak('Unable to clear fingerprint (clear_fingerprint)');
 }
 
 sub feed {
-    _feed( $self->cp, $data, length($data) / BYTES_PER_SAMPLE() );
+    my ( $self, $data ) = @_;
+    _feed( $self->cp, $data, length($data) / BYTES_PER_SAMPLE() )
         or corak("unable to feed");
 }
 
