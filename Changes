@@ -6,6 +6,7 @@
       the reason something fails, but at least tells us when it
       fails. We now croak when an error occurs in the library.
     * Speed up the class (make_immutable).
+    * Fix POD rendering problem.
 
 0.001     2019-06-24 01:02:11+03:00 Asia/Jerusalem
 
