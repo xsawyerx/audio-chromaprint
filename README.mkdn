@@ -4,7 +4,7 @@ Audio::Chromaprint - Interface to the Chromaprint library
 
 # VERSION
 
-version 0.001
+version 0.002
 
 # SYNOPSIS
 
@@ -108,7 +108,8 @@ You can use [Path::Tiny](https://metacpan.org/pod/Path::Tiny) to do this easily 
 Process any remaining buffered audio data.
 
 This has to be run before you can get the fingerprints.
-&#x3d;head2 get\_fingerprint
+
+## get\_fingerprint
 
     my $fingerprint = $chromaprint->get_fingerprint();
 
