@@ -13,53 +13,7 @@ use constant 'MIN_SILENCE_THRESHOLD' => 0;
 use constant 'MAX_SILENCE_THRESHOLD' => 32_767;
 use constant 'BYTES_PER_SAMPLE'      => 2;
 
-our $HAS_SUBS;
-our %SUBS = (
-    '_new'         => [ ['int']                       => 'opaque' ],
-    '_get_version' => [ []                            => 'string' ],
-    '_free'        => [ ['opaque']                    => 'void'   ],
-    '_set_option'  => [ [ 'opaque', 'string', 'int' ] => 'int'    ],
-    '_start'       => [ [ 'opaque', 'int', 'int' ]    => 'int'    ],
-    '_finish'      => [ ['opaque']                    => 'int'    ],
-    '_feed'        => [ ['opaque', 'string', 'int' ]  => 'int'    ],
-
-    '_get_fingerprint_hash'     => [ [ 'opaque', 'uint32*' ], 'int' ],
-    '_get_fingerprint'          => [ [ 'opaque', 'opaque*' ], 'int' ],
-    '_get_raw_fingerprint'      => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
-    '_get_num_channels'         => [ [ 'opaque' ], 'int' ],
-    '_get_sample_rate'          => [ [ 'opaque' ], 'int' ],
-    '_get_item_duration'        => [ [ 'opaque' ], 'int' ],
-    '_get_item_duration_ms'     => [ [ 'opaque' ], 'int' ],
-    '_get_delay'                => [ [ 'opaque' ], 'int' ],
-    '_get_delay_ms'             => [ [ 'opaque' ], 'int' ],
-    '_get_raw_fingerprint_size' => [ [ 'opaque', 'int*' ], 'int' ],
-    '_clear_fingerprint'        => [ [ 'opaque' ], 'int' ],
-
-    '_dealloc' => [ [ 'opaque' ] => 'void' ],
-);
-
-sub BUILD {
-    $HAS_SUBS++
-        and return;
-
-    my $ffi = FFI::Platypus->new;
-
-    # Setting this mangler lets is omit the chromaprint_ prefix
-    # from the attach call below, and the function names used
-    # by perl
-    $ffi->mangler( sub {
-        my $name = shift;
-        $name =~ s/^_/chromaprint_/xms;
-        return $name;
-    } );
-
-    $ffi->lib( find_lib_or_exit( 'lib' => 'chromaprint', alien => 'Alien::chromaprint' ) );
-
-    $ffi->attach( $_, @{ $SUBS{$_} } )
-        for keys %SUBS;
-
-    $ffi->attach_cast( '_opaque_to_string' => opaque => 'string' );
-}
+with qw< MooseX::Role::FFI >;
 
 subtype 'ChromaprintAlgorithm',
     as 'Int',
@@ -105,12 +59,51 @@ has 'silence_threshold' => (
     'predicate' => 'has_silence_threshold',
 );
 
-sub get_version {
-    # generate chromaprint object
-    __PACKAGE__->can('_get_version')
-        or __PACKAGE__->new();
+sub ffi_subs_data {
+    return {
+        '_new'         => [ ['int']                       => 'opaque' ],
+        '_get_version' => [ []                            => 'string' ],
+        '_free'        => [ ['opaque']                    => 'void'   ],
+        '_set_option'  => [ [ 'opaque', 'string', 'int' ] => 'int'    ],
+        '_start'       => [ [ 'opaque', 'int', 'int' ]    => 'int'    ],
+        '_finish'      => [ ['opaque']                    => 'int'    ],
+        '_feed'        => [ ['opaque', 'string', 'int' ]  => 'int'    ],
 
-    return _get_version();
+        '_get_fingerprint_hash'     => [ [ 'opaque', 'uint32*' ], 'int' ],
+        '_get_fingerprint'          => [ [ 'opaque', 'opaque*' ], 'int' ],
+        '_get_raw_fingerprint'      => [ [ 'opaque', 'opaque*', 'int*' ], 'int' ],
+        '_get_num_channels'         => [ [ 'opaque' ], 'int' ],
+        '_get_sample_rate'          => [ [ 'opaque' ], 'int' ],
+        '_get_item_duration'        => [ [ 'opaque' ], 'int' ],
+        '_get_item_duration_ms'     => [ [ 'opaque' ], 'int' ],
+        '_get_delay'                => [ [ 'opaque' ], 'int' ],
+        '_get_delay_ms'             => [ [ 'opaque' ], 'int' ],
+        '_get_raw_fingerprint_size' => [ [ 'opaque', 'int*' ], 'int' ],
+        '_clear_fingerprint'        => [ [ 'opaque' ], 'int' ],
+
+        '_dealloc' => [ [ 'opaque' ] => 'void' ],
+    };
+}
+
+sub ffi_lib   {'chromaprint'}
+sub ffi_alien {'Alien::chromaprint'}
+
+after '_build_ffi' => sub {
+    my $self = shift;
+    $self->_ffi->attach_cast( '_opaque_to_string' => opaque => 'string' );
+
+    # Setting this mangler lets is omit the chromaprint_ prefix
+    # from the attach call below, and the function names used
+    # by perl
+    $self->_ffi->mangler( sub {
+        my $name = shift;
+        $name =~ s/^_/chromaprint_/xms;
+        return $name;
+    } );
+};
+
+sub get_version {
+    return $self->ffi_sub('_get_version')->();
 }
 
 sub start {
@@ -122,7 +115,7 @@ sub start {
     $num_channels =~ /^[12]$/xms
         or croak 'num_channels must be 1 or 2';
 
-    _start( $self->cp, $sample_rate, $num_channels )
+    $self->ffi_sub('_start')->( $self->cp, $sample_rate, $num_channels )
         or croak 'Unable to start (start)';
 }
 
@@ -143,20 +136,20 @@ sub set_option {
             or croak('silence_threshold option must be between 0 and 32767');
     }
 
-    _set_option( $self->cp, $name => $value )
+    $self->ffi_sub('_set_option')->( $self->cp, $name => $value )
         or croak("Error setting option $name (set_option)");
 }
 
 sub finish {
     my $self = shift;
-    _finish( $self->cp )
+    $self->ffi_sub('_finish')->( $self->cp )
         or croak('Unable to finish (finish)');
 }
 
 sub get_fingerprint_hash {
     my $self = shift;
     my $hash;
-    _get_fingerprint_hash( $self->cp, \$hash )
+    $self->ffi_sub('_get_fingerprint_hash')->( $self->cp, \$hash )
         or croak('Unable to get fingerprint hash (get_fingerprint_hash)');
     return $hash;
 }
@@ -164,10 +157,10 @@ sub get_fingerprint_hash {
 sub get_fingerprint {
     my $self = shift;
     my $ptr;
-    _get_fingerprint($self->cp, \$ptr)
+    $self->ffi_sub('_get_fingerprint')->($self->cp, \$ptr)
         or croak('Unable to get fingerprint (get_fingerprint)');
     my $str = _opaque_to_string($ptr);
-    _dealloc($ptr);
+    $self->ffi_sub('_dealloc')->($ptr);
     return $str;
 }
 
@@ -175,68 +168,69 @@ sub get_raw_fingerprint {
     my $self = shift;
     my ( $ptr, $size );
 
-    _get_raw_fingerprint( $self->cp, \$ptr, \$size )
+    $self->ffi_sub('_get_raw_fingerprint')->( $self->cp, \$ptr, \$size )
         or croak('Unable to get raw fingerprint (get_raw_fingerprint)');
 
     # not espeically fast, but need a cast with a variable length array
     my $fp = FFI::Platypus->new->cast( 'opaque' => "uint32[$size]", $ptr );
-    _dealloc($ptr);
+    $self->ffi_sub('_dealloc')->($ptr);
     return $fp;
 }
 
 sub get_num_channels {
     my $self = shift;
-    return _get_num_channels($self->cp);
+    return $self->ffi_sub('_get_num_channels')->($self->cp);
 }
 
 sub get_sample_rate {
     my $self = shift;
-    return _get_sample_rate($self->cp);
+    return $self->ffi_sub('_get_sample_rate')->($self->cp);
 }
 
 sub get_item_duration {
     my $self = shift;
-    return _get_item_duration($self->cp);
+    return $self->ffi_sub('_get_item_duration')->($self->cp);
 }
 
 sub get_item_duration_ms {
     my $self = shift;
-    return _get_item_duration_ms($self->cp);
+    return $self->ffi_sub('_get_item_duration_ms')->($self->cp);
 }
 
 sub get_delay {
     my $self = shift;
-    return _get_delay($self->cp);
+    return $self->ffi_sub('_get_delay')->($self->cp);
 }
 
 sub get_delay_ms {
     my $self = shift;
-    return _get_delay_ms($self->cp);
+    return $self->ffi_sub('_get_delay_ms')->($self->cp);
 }
 
 sub get_raw_fingerprint_size {
     my $self = shift;
     my $size;
-    _get_raw_fingerprint_size($self->cp, \$size)
+    $self->ffi_sub('_get_raw_fingerprint_size')->($self->cp, \$size)
         or croak('Unable to get raw fingerprint size (get_raw_fingerprint_size)');
     return $size;
 }
 
 sub clear_fingerprint {
     my $self = shift;
-    _clear_fingerprint( $self->cp )
+    $self->ffi_sub('_clear_fingerprint')->( $self->cp )
         or croak('Unable to clear fingerprint (clear_fingerprint)');
 }
 
 sub feed {
     my ( $self, $data ) = @_;
-    _feed( $self->cp, $data, length($data) / BYTES_PER_SAMPLE() )
-        or corak("unable to feed");
+    $self->ffi_sub('_feed')->(
+        $self->cp, $data, length($data) / BYTES_PER_SAMPLE()
+    ) or corak("unable to feed");
 }
 
 sub DEMOLISH {
     my $self = shift;
-    _free( $self->cp );
+    $self->ffi_sub('_free')->( $self->cp );
 }
 
 # TODO: chromaprint_encode_fingerprint
