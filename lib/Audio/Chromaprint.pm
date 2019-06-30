@@ -92,8 +92,6 @@ around '_build_ffi' => sub {
     my $self = shift;
     my $ffi  = $self->$orig(@_);
 
-    $ffi->attach_cast( '_opaque_to_string' => opaque => 'string' );
-
     # Setting this mangler lets is omit the chromaprint_ prefix
     # from the attach call below, and the function names used
     # by perl
@@ -164,7 +162,8 @@ sub get_fingerprint {
     my $ptr;
     $self->ffi_sub('_get_fingerprint')->($self->cp, \$ptr)
         or croak('Unable to get fingerprint (get_fingerprint)');
-    my $str = _opaque_to_string($ptr);
+
+    my $str = $self->ffi->cast( 'opaque' => 'string' => $ptr );
     $self->ffi_sub('_dealloc')->($ptr);
     return $str;
 }
