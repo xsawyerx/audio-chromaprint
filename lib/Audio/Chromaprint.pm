@@ -40,10 +40,10 @@ has 'cp' => (
         # subtract one from the algorithm so that
         # 1 maps to 2 maps to CHROMAPRINT_ALGORITHM_TEST2
         # (the latter has the value 1)
-        my $cp   = _new( $self->algorithm - 1 );
+        my $cp   = $self->ffi_sub('_new')->( $self->algorithm - 1 );
 
         if ( $self->has_silence_threshold ) {
-            _set_option(
+            $self->ffi_sub('_set_option')->(
                 $cp, 'silence_threshold' => $self->silence_threshold,
             ) or croak('Error setting option silence_threshold');
         }
