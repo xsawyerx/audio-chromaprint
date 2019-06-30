@@ -87,18 +87,23 @@ sub ffi_subs_data {
 sub ffi_lib   {'chromaprint'}
 sub ffi_alien {'Alien::chromaprint'}
 
-after '_build_ffi' => sub {
+around '_build_ffi' => sub {
+    my $orig = shift;
     my $self = shift;
-    $self->_ffi->attach_cast( '_opaque_to_string' => opaque => 'string' );
+    my $ffi  = $self->$orig(@_);
+
+    $ffi->attach_cast( '_opaque_to_string' => opaque => 'string' );
 
     # Setting this mangler lets is omit the chromaprint_ prefix
     # from the attach call below, and the function names used
     # by perl
-    $self->_ffi->mangler( sub {
+    $ffi->mangler( sub {
         my $name = shift;
         $name =~ s/^_/chromaprint_/xms;
         return $name;
     } );
+
+    return $ffi;
 };
 
 sub get_version {
