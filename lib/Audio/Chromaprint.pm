@@ -4,7 +4,6 @@ package Audio::Chromaprint;
 use Moose;
 use Carp qw< croak >;
 use FFI::Platypus 0.88;
-use FFI::CheckLib;
 use Moose::Util::TypeConstraints;
 
 # This is in three statement so we could support 5.6.0,
