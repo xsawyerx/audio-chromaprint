@@ -3,7 +3,6 @@ package Audio::Chromaprint;
 
 use Moose;
 use Carp qw< croak >;
-use FFI::Platypus 0.88;
 use Moose::Util::TypeConstraints;
 
 # This is in three statement so we could support 5.6.0,
@@ -176,7 +175,7 @@ sub get_raw_fingerprint {
         or croak('Unable to get raw fingerprint (get_raw_fingerprint)');
 
     # not espeically fast, but need a cast with a variable length array
-    my $fp = FFI::Platypus->new->cast( 'opaque' => "uint32[$size]", $ptr );
+    my $fp = $self->ffi->cast( 'opaque' => "uint32[$size]", $ptr );
     $self->ffi_sub('_dealloc')->($ptr);
     return $fp;
 }
