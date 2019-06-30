@@ -30,15 +30,12 @@ has 'ffi_subs_refs' => (
 
 sub _build_ffi {
     my $self     = shift;
-    my $ffi_data = $self->ffi_subs_data;
-    my $ffi_lib  = $self->ffi_lib;
     my $ffi      = FFI::Platypus->new;
-
     my $fallback = $self->can('ffi_alien');
 
     $ffi->lib(
         find_lib_or_exit(
-            'lib' => $ffi_lib,
+            'lib' => $self->ffi_lib,
             $fallback ? ( alien => $fallback->() ) : (),
         )
     );
