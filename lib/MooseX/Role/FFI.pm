@@ -25,7 +25,7 @@ has 'ffi_subs_refs' => (
     'builder'  => '_build_ffi_subs_refs',
     'lazy'     => 1,
     'traits'   => ['Hash'],
-    'handles'  => { 'get' => 'ffi_sub' },
+    'handles'  => { 'ffi_sub' => 'get' },
 );
 
 sub _build_ffi {
