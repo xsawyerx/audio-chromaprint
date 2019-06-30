@@ -46,10 +46,10 @@ sub _build_ffi {
 sub _build_ffi_subs_refs {
     my $self      = shift;
     my $ffi       = $self->_ffi;
-    my %subs_data = %{ $self->_ffi_subs_data };
+    my %subs_data = %{ $self->ffi_subs_data };
 
     my %subs_refs = map +(
-        $_ => $ffi->function( $_ => $subs_data{$_} )->sub_ref,
+        $_ => $ffi->function( $_ => @{ $subs_data{$_} } )->sub_ref,
     ), keys %subs_data;
 
     return \%subs_refs;
@@ -58,7 +58,7 @@ sub _build_ffi_subs_refs {
 sub BUILD {
     # FFI subs are lazy so they can happen after ffi creation
     # but we still want them created during instantiation
-    shift->ffi_subs_refs;
+    shift->_ffi_subs_refs;
 }
 
 no Moose::Role;
