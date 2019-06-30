@@ -2,8 +2,7 @@ package MooseX::Role::FFI;
 # ABSTRACT: Easily create interfaces to FFI functions with Moose roles
 
 use Moose::Role;
-
-use FFI::Platypus 0.88;
+use FFI::Platypus 0.89_01;
 use FFI::CheckLib;
 
 requires qw<
@@ -36,7 +35,7 @@ sub _build_ffi {
     $ffi->lib(
         find_lib_or_exit(
             'lib' => $self->ffi_lib,
-            $fallback ? ( alien => $fallback->() ) : (),
+            $fallback ? ( 'alien' => $fallback->() ) : (),
         )
     );
 
