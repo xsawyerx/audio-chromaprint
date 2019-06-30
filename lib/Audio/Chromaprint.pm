@@ -102,6 +102,7 @@ after '_build_ffi' => sub {
 };
 
 sub get_version {
+    my $self = shift;
     return $self->ffi_sub('_get_version')->();
 }
 
